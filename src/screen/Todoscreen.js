@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   View,
   Modal,
+  Image,
 } from 'react-native';
-import {IconButton} from 'react-native-paper';
 import FallBack from '../components/FallBack';
 import ModalContent from '../components/ModalContent';
 
@@ -19,6 +19,7 @@ const Todoscreen = () => {
   const [todoDescription, setTodoDescription] = useState('');
   const [error, setError] = useState('');
   const [todoList, setTodoList] = useState([]);
+  const [completedList, setCompletedList] = useState([]);
   const [editedTodo, setEditedTodo] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [index, setIndex] = useState(0);
@@ -26,13 +27,16 @@ const Todoscreen = () => {
   //render todos
   const renderTodos = ({item, index}) => {
     return (
-      <TouchableOpacity onPress={() => handleModal(index)}>
+      <TouchableOpacity
+        onPress={() => {
+          if (item.status === 'PENDING') handleModalValue(index);
+        }}>
         <View
           style={{
-            backgroundColor: '#1e90ff',
+            backgroundColor: item.status === 'PENDING' ? '#1e90ff' : '#009b00',
             borderRadius: 6,
-            paddingHorizontal: 6,
-            paddingVertical: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 16,
             marginBottom: 12,
             flexDirection: 'row',
             alignItems: 'center',
@@ -41,6 +45,7 @@ const Todoscreen = () => {
             shadowOpacity: 0.8,
             shadowRadius: 3,
             elevation: 5,
+            gap: 10,
           }}>
           <View style={{flex: 1}}>
             <Text
@@ -52,40 +57,74 @@ const Todoscreen = () => {
               }}>
               {item.title}
             </Text>
+            {item.status === 'COMPLETED' && (
+              <Text
+                style={{
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: '400',
+                  marginHorizontal: 6,
+                }}>
+                Description: {item.description}
+              </Text>
+            )}
           </View>
-
-          <IconButton
-            icon="pencil"
-            iconColor="#fff"
+          {item.status === 'PENDING' && (
+            <TouchableOpacity
+              onPress={e => {
+                e.stopPropagation();
+                handleEditTodo(item);
+              }}>
+              <Image
+                source={require('../../assets/Pencil.png')}
+                style={{height: 25, width: 25}}
+              />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
             onPress={e => {
               e.stopPropagation();
-              handleEditTodo(item);
-            }}
-          />
-          <IconButton
-            icon="trash-can"
-            iconColor="#fff"
-            onPress={e => {
-              e.stopPropagation();
-              handleDeleteTodo(item.id);
-            }}
-          />
+              handleDeleteTodo(item);
+            }}>
+            <Image
+              source={require('../../assets/Trash-Bin.png')}
+              style={{height: 25, width: 25}}
+            />
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
   };
 
-  const handleModal =(index) => {
+  const handleModalValue = index => {
     setIndex(index);
     setModalVisible(true);
-  }
+  };
+
+  // Handle Completed task
+
+  const handleCompletedTask = item => {
+    const updatedTodoList = todoList.filter(todo => todo.id !== item.id);
+    const updatedCompleteTaskList = [
+      ...completedList,
+      {...item, status: 'COMPLETED'},
+    ];
+    setTodoList(updatedTodoList);
+    setCompletedList(updatedCompleteTaskList);
+    setModalVisible(false);
+  };
 
   // Add a todo
   const handleAddTodo = () => {
     if (todoTitle && todoDescription) {
       setTodoList([
         ...todoList,
-        {id: Math.random(), title: todoTitle, description: todoDescription},
+        {
+          id: Math.random(),
+          title: todoTitle,
+          description: todoDescription,
+          status: 'PENDING',
+        },
       ]);
       setTodoTitle('');
       setTodoDescription('');
@@ -105,13 +144,20 @@ const Todoscreen = () => {
 
   // Delete a todo
 
-  const handleDeleteTodo = id => {
-    const updatedTodoList = todoList.filter(todo => todo.id !== id);
+  const handleDeleteTodo = item => {
+    if (item.status === 'PENDING') {
+      const updatedTodoList = todoList.filter(todo => todo.id !== item.id);
+      setTodoList(updatedTodoList);
+    } else {
+      const updatedCompleteTaskList = completedList.filter(
+        todo => todo.id !== item.id,
+      );
+      setCompletedList(updatedCompleteTaskList);
+    }
     setError('');
     setTodoTitle('');
     setTodoDescription('');
     setEditedTodo(null);
-    setTodoList(updatedTodoList);
   };
 
   // Update Todo
@@ -191,18 +237,23 @@ const Todoscreen = () => {
           </Text>
         </TouchableOpacity>
       )}
-      {
-        todoList.length ? (
-          <View style={{ marginBottom: 8}}>
-          <Text style={{color: '#393A3F', fontWeight: 'bold', fontSize: 16}}>Pending Tasks</Text>
+      {todoList.length ? (
+        <View style={{marginBottom: 8}}>
+          <Text style={{color: '#55565B', fontWeight: 'bold', fontSize: 16}}>
+            Pending Tasks
+          </Text>
         </View>
-        ) : null
-      }
+      ) : null}
       <FlatList data={todoList} renderItem={renderTodos} />
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isModalVisible}>
+      {completedList.length ? (
+        <View style={{marginBottom: 8}}>
+          <Text style={{color: '#55565B', fontWeight: 'bold', fontSize: 16}}>
+            Completed Tasks
+          </Text>
+        </View>
+      ) : null}
+      <FlatList data={completedList} renderItem={renderTodos} />
+      <Modal animationType="slide" transparent={true} visible={isModalVisible}>
         <View
           style={{
             flexDirection: 'row',
@@ -210,14 +261,16 @@ const Todoscreen = () => {
             alignItems: 'flex-end',
             height: '100%',
           }}>
-          <ModalContent  setModalVisible={setModalVisible} item={todoList[index]}/>
+          <ModalContent
+            setModalVisible={setModalVisible}
+            item={todoList[index]}
+            handleCompletedTask={handleCompletedTask}
+          />
         </View>
       </Modal>
-      {todoList.length <= 0 && <FallBack />}
+      {todoList.length <= 0 && completedList.length <= 0 && <FallBack />}
     </SafeAreaView>
   );
 };
 
 export default Todoscreen;
-
-const styles = StyleSheet.create({});

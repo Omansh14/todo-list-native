@@ -139,6 +139,7 @@ const Login = ({navigation}) => {
           style={usernameInput}
           value={password}
           onChangeText={text => onChangeText('password', text)}
+          secureTextEntry
         />
       </View>
       {passwordError && passwordError?.length > 0 && (
