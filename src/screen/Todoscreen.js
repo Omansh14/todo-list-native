@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   FlatList,
   SafeAreaView,
@@ -7,9 +7,11 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Modal,
 } from 'react-native';
 import {IconButton} from 'react-native-paper';
 import FallBack from '../components/FallBack';
+import ModalContent from '../components/ModalContent';
 
 const Todoscreen = () => {
   //local states
@@ -18,59 +20,65 @@ const Todoscreen = () => {
   const [error, setError] = useState('');
   const [todoList, setTodoList] = useState([]);
   const [editedTodo, setEditedTodo] = useState(null);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [index, setIndex] = useState(0);
 
   //render todos
   const renderTodos = ({item, index}) => {
     return (
-      <View
-        style={{
-          backgroundColor: '#1e90ff',
-          borderRadius: 6,
-          paddingHorizontal: 6,
-          paddingVertical: 8,
-          marginBottom: 12,
-          flexDirection: 'row',
-          alignItems: 'center',
-          shadowColor: '000',
-          shadowOffset: {width: 0, height: 4},
-          shadowOpacity: 0.8,
-          shadowRadius: 3,
-          elevation: 5,
-        }}>
-        <View style={{flex: 1}}>
-          <Text
-            style={{
-              color: '#fff',
-              fontSize: 20,
-              fontWeight: '800',
-              marginHorizontal: 6,
-            }}>
-            {item.title}
-          </Text>
-          <Text
-            style={{
-              color: '#fff',
-              fontSize: 16,
-              fontWeight: '400',
-              marginHorizontal: 6,
-            }}>
-            {item.description}
-          </Text>
-        </View>
+      <TouchableOpacity onPress={() => handleModal(index)}>
+        <View
+          style={{
+            backgroundColor: '#1e90ff',
+            borderRadius: 6,
+            paddingHorizontal: 6,
+            paddingVertical: 8,
+            marginBottom: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            shadowColor: '000',
+            shadowOffset: {width: 0, height: 4},
+            shadowOpacity: 0.8,
+            shadowRadius: 3,
+            elevation: 5,
+          }}>
+          <View style={{flex: 1}}>
+            <Text
+              style={{
+                color: '#fff',
+                fontSize: 20,
+                fontWeight: '800',
+                marginHorizontal: 6,
+              }}>
+              {item.title}
+            </Text>
+          </View>
 
-        <IconButton
-          icon="pencil"
-          iconColor="#fff"
-          onPress={() => handleEditTodo(item)}
-        />
-        <IconButton
-          icon="trash-can"
-          iconColor="#fff"
-          onPress={() => handleDeleteTodo(item.id)}
-        />
-      </View>
+          <IconButton
+            icon="pencil"
+            iconColor="#fff"
+            onPress={e => {
+              e.stopPropagation();
+              handleEditTodo(item);
+            }}
+          />
+          <IconButton
+            icon="trash-can"
+            iconColor="#fff"
+            onPress={e => {
+              e.stopPropagation();
+              handleDeleteTodo(item.id);
+            }}
+          />
+        </View>
+      </TouchableOpacity>
     );
   };
+
+  const handleModal =(index) => {
+    setIndex(index);
+    setModalVisible(true);
+  }
 
   // Add a todo
   const handleAddTodo = () => {
@@ -183,7 +191,28 @@ const Todoscreen = () => {
           </Text>
         </TouchableOpacity>
       )}
+      {
+        todoList.length ? (
+          <View style={{ marginBottom: 8}}>
+          <Text style={{color: '#393A3F', fontWeight: 'bold', fontSize: 16}}>Pending Tasks</Text>
+        </View>
+        ) : null
+      }
       <FlatList data={todoList} renderItem={renderTodos} />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'flex-end',
+            height: '100%',
+          }}>
+          <ModalContent  setModalVisible={setModalVisible} item={todoList[index]}/>
+        </View>
+      </Modal>
       {todoList.length <= 0 && <FallBack />}
     </SafeAreaView>
   );
